@@ -17,18 +17,58 @@ class FlutterBlueApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      color: Colors.lightBlue,
-      home: StreamBuilder<BluetoothState>(
-          stream: FlutterBlue.instance.state,
-          initialData: BluetoothState.unknown,
-          builder: (c, snapshot) {
-            final state = snapshot.data;
-            if (state == BluetoothState.on) {
-              return FindDevicesScreen();
-            }
-            return BluetoothOffScreen(state: state);
-          }),
+        color: Colors.lightBlue, home: Scaffold(body: CheckingBlueTooth()));
+  }
+}
+
+class CheckingBlueTooth extends StatefulWidget {
+  const CheckingBlueTooth({Key? key}) : super(key: key);
+
+  @override
+  _CheckingBlueToothState createState() => _CheckingBlueToothState();
+}
+
+class _CheckingBlueToothState extends State<CheckingBlueTooth> {
+  bool isOn = false;
+  String message = "";
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Center(
+            child: Text("Bluetooth is $isOn",
+                style: TextStyle(color: Colors.green))),
+        Center(child: Text(message, style: TextStyle(color: Colors.red))),
+        Center(
+          child: ElevatedButton(
+              onPressed: () => checkingBluetooth(),
+              child: Text("Checking bluetooth")),
+        ),
+      ]),
     );
+  }
+
+  Future<void> checkingBluetooth() async {
+    while (true) {
+      try {
+        bool checkIsOn = await FlutterBlue.instance.isOn;
+        setState(() {
+          isOn = checkIsOn;
+        });
+        if (checkIsOn) {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => FindDevicesScreen()));
+        }
+        ;
+        await Future.delayed(Duration(seconds: 1));
+      } catch (e) {
+        setState(() {
+          isOn = false;
+          message = e.toString();
+        });
+        await Future.delayed(Duration(seconds: 1));
+      }
+    }
   }
 }
 
